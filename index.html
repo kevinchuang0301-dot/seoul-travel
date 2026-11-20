@@ -363,7 +363,7 @@ el("event-form").addEventListener("submit",async ev=>{
 		el("title").focus();
 		return;
 	}
-	if(mode==="fixed"&&!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(selectedTime)){
+	if(mode==="fixed"&&!/^([01]\d|2[0-3]):[0-5]\d$/.test(selectedTime)){
 		showFormFeedback("選擇「指定時間」時，請填寫有效的開始時間。");
 		el("time").focus();
 		return;
