@@ -303,27 +303,53 @@ function saveItineraryLocally(){
 }
 let items=loadSavedItinerary(),db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate=initialMobileDate();
 let serverAvailable=false;
+let connectionWarning=false;
+let connectionTimer=null;
+function scheduleConnectionWarning(){
+	clearTimeout(connectionTimer);
+	connectionWarning=!navigator.onLine;
+	if(!connectionWarning&&!serverAvailable){
+		// Allow Firebase enough time to connect before warning about a failure.
+		connectionTimer=setTimeout(()=>{
+			if(!serverAvailable){
+				connectionWarning=true;
+				updateConnectionUI();
+			}
+		},8000);
+	}
+	updateConnectionUI();
+}
 function updateConnectionUI(){
 	const online=navigator.onLine&&serverAvailable;
 	enabled=Boolean(online);
 	const offline=!navigator.onLine;
 	const notice=el("offline-notice");
-	notice.classList.toggle("hide",online);
+	notice.classList.toggle("hide",online||!connectionWarning);
 	notice.textContent=offline
 		?"📴 離線唯讀 · 顯示最後一次同步的行程，恢復連線後才能編輯"
-		:"☁ 尚未連上雲端 · 暫時唯讀，連線成功後才能編輯";
+		:"☁ 無法連上雲端 · 暫時唯讀，恢復連線後才能編輯";
 	if(!online){
 		status(offline
-			?(items.length?"離線唯讀 · 顯示本機最後同步的行程":"離線唯讀 · 尚無已儲存的行程，請先連線同步")
-			:(items.length?"等待雲端連線 · 目前顯示本機已存行程":"等待雲端連線…"));
+			?(connectionWarning?"離線唯讀 · 顯示最後同步的行程":"正在檢查連線…")
+			:(connectionWarning?"雲端連線逾時 · 顯示本機行程":"雲端連線中…"));
 		if(!editor.classList.contains("hide"))closeEditor();
 	}else{
+		connectionWarning=false;
+		clearTimeout(connectionTimer);
 		status("已同步，免登入即可新增、修改及刪除");
 	}
 	render();
 }
-window.addEventListener("offline",()=>{serverAvailable=false;updateConnectionUI()});
-window.addEventListener("online",()=>{serverAvailable=false;updateConnectionUI()});
+window.addEventListener("offline",()=>{
+	serverAvailable=false;
+	clearTimeout(connectionTimer);
+	connectionWarning=true;
+	updateConnectionUI();
+});
+window.addEventListener("online",()=>{
+	serverAvailable=false;
+	scheduleConnectionWarning();
+});
 function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((isHoliday(date,i))?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort(compareItineraryItems).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=displayEventTitle(e);btn.append(strong);if(e.time){const time=document.createElement("span");time.className="event-time";time.textContent=e.time;btn.append(time)}if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
@@ -466,6 +492,8 @@ unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("dat
 	updateConnectionUI();
 },error=>{
 	serverAvailable=false;
+	connectionWarning=true;
+	clearTimeout(connectionTimer);
 	updateConnectionUI();
 	if(navigator.onLine)errorText(error);
 });
@@ -528,7 +556,7 @@ el("event-form").addEventListener("submit",async ev=>{
 });
 el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!navigator.onLine||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
 render();
-updateConnectionUI();
+scheduleConnectionWarning();
 boot();
 if("serviceWorker" in navigator){
 	window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("離線模式註冊失敗",e)));
