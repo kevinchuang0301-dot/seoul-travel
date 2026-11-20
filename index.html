@@ -219,9 +219,24 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 	.event small{display:block;color:#63757b;font-size:12px;line-height:1.35}
 	.add{margin-top:7px;padding:9px 6px}
 }
+
+/* Mobile connection alert sits beside the trip subtitle. */
+.mobile-connection-notice{display:none}
+@media(max-width:700px){
+	.page-hero .hero-subline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+	.page-hero .hero-subline p{margin:0;min-width:0;flex:0 1 auto}
+	.mobile-connection-notice:not(.hide){
+		display:inline-flex;align-items:center;justify-content:center;
+		flex:0 0 auto;max-width:46%;
+		padding:4px 8px;border-radius:7px;
+		font-size:11px;font-weight:800;line-height:1.3;text-align:center;
+		background:#ffcf9c;border:1px solid #ffa34d;color:#79320b;
+	}
+	.mobile-connection-notice[data-kind="offline"]{background:#ffb4a2;border-color:#fa6b50;color:#721d12}
+}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
-<header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
+<header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><div class="hero-subline"><p>1/31～2/13 · 兩週行程規劃</p><span id="mobile-connection-notice" class="mobile-connection-notice hide" role="status" aria-live="polite"></span></div></header>
 <main>
 <div id="config-notice" class="notice"><strong>多人同步尚未啟用</strong><div class="hint">行事曆已建立。請先設定 Firebase 專案與 Firestore 規則才能多人共用；設定前無法儲存。啟用免登入共用後，任何取得網址的人都可能閱讀或修改行程，請勿填入個資或訂位編號。</div></div>
 <div class="toolbar"><div><strong>行程事項</strong><div id="offline-notice" class="offline-notice hide" role="status">📴 離線唯讀 · 顯示最後一次同步的行程，恢復連線後才能編輯</div><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><button id="refresh" type="button">重新整理</button></div></div>
@@ -328,6 +343,10 @@ function updateConnectionUI(){
 	notice.textContent=offline
 		?"📴 離線唯讀 · 顯示最後一次同步的行程，恢復連線後才能編輯"
 		:"☁ 無法連上雲端 · 暫時唯讀，恢復連線後才能編輯";
+	const mobileNotice=el("mobile-connection-notice");
+	mobileNotice.classList.toggle("hide",online||!connectionWarning);
+	mobileNotice.dataset.kind=offline?"offline":"unavailable";
+	mobileNotice.textContent=offline?"📴 離線唯讀":"⚠ 雲端無法連線";
 	if(!online){
 		status(offline
 			?(connectionWarning?"離線唯讀 · 顯示最後同步的行程":"正在檢查連線…")
