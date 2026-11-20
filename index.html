@@ -210,12 +210,20 @@ const dates=Array.from({length:14},(_,i)=>{const d=new Date(2027,0,31+i);return 
 const weekdays=["日","一","二","三","四","五","六"];
 const categoryIcons={flight:"✈️",transport:"🚗",meal:"🍚",hotel:"🏠",other:"📌"};
 const categoryIcon=value=>categoryIcons[value]||categoryIcons.other;
+// Store the category as a visible title prefix to retain the existing Firestore schema.
+const categoryFromTitle=title=>{
+	const prefix=String(title||"").match(/^(✈️|🚗|🍚|🏠|📌)\s+/u);
+	return prefix?Object.keys(categoryIcons).find(key=>categoryIcons[key]===prefix[1])||"other":null;
+};
+const plainEventTitle=title=>String(title||"").replace(/^(?:✈️|🚗|🍚|🏠|📌)\s+/u,"");
+const eventCategory=event=>categoryFromTitle(event.title)||event.category||"other";
+const displayEventTitle=event=>categoryIcon(eventCategory(event))+" "+plainEventTitle(event.title);
 const lunar={"2027-02-04":"小年夜","2027-02-05":"除夕","2027-02-06":"初一","2027-02-07":"初二","2027-02-08":"初三","2027-02-09":"初四","2027-02-10":"初五","2027-02-11":"開工"};
 const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const label=m+"/"+d+"（"+weekdays[new Date(y,m-1,d).getDay()]+"）";return label+(lunar[date]?" "+lunar[date]:"")});
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
 const dateInput=el("date");for(let i=0;i<dates.length;i++){let opt=document.createElement("option");opt.value=dates[i];opt.textContent=names[i];dateInput.append(opt);}
 let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate="2027-02-03";
-function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+categoryIcon(e.category)+" "+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
+function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+displayEventTitle(e);btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
 	const daysEl=el("mobile-days");
@@ -260,7 +268,7 @@ function renderMobile(){
 			card.type="button";
 			card.className=cls;
 			const title=document.createElement("strong");
-			title.textContent=categoryIcon(e.category)+" "+e.title;
+			title.textContent=displayEventTitle(e);
 			card.append(title);
 			if(e.notes){
 				const note=document.createElement("span");
@@ -305,7 +313,7 @@ function renderMobile(){
 	add.textContent="＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;el("category-options").querySelector(`input[value="${categoryIcons[e?.category]?e.category:"other"}"]`).checked=true;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;el("category-options").querySelector(`input[value="${e?eventCategory(e):"other"}"]`).checked=true;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?plainEventTitle(e.title):"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function syncTimeMode(){
 	const fixed=el("time-mode").value==="fixed";
 	el("time-field").classList.toggle("hide",!fixed);
@@ -374,9 +382,8 @@ el("event-form").addEventListener("submit",async ev=>{
 	}
 	const payload={
 		date:dateInput.value,
-		category:document.querySelector('input[name="event-category"]:checked')?.value||"other",
 		time:mode==="fixed"?selectedTime:"",
-		title,
+		title:categoryIcon(document.querySelector('input[name="event-category"]:checked')?.value||"other")+" "+plainEventTitle(title),
 		notes:el("notes").value.trim(),
 		updatedAt:serverTimestamp()
 	};
