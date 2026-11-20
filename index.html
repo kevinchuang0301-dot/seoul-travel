@@ -164,6 +164,8 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 .form-feedback.hide{display:none}
 .form-feedback[data-kind="pending"]{background:#eef6f9;border-color:#bdd7e2;color:#244853}
 
+.offline-notice{margin-top:6px;padding:8px 10px;border-radius:8px;background:#fff2d9;color:#754b12;font-size:13px;line-height:1.5}
+.offline-notice.hide{display:none}
 /* Shared category buttons for desktop/mobile event editor */
 .category-picker{min-width:0;margin:0;border:0;padding:0}
 .category-picker legend{font-size:13px;font-weight:650;margin-bottom:7px}
@@ -222,7 +224,7 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
 <main>
 <div id="config-notice" class="notice"><strong>多人同步尚未啟用</strong><div class="hint">行事曆已建立。請先設定 Firebase 專案與 Firestore 規則才能多人共用；設定前無法儲存。啟用免登入共用後，任何取得網址的人都可能閱讀或修改行程，請勿填入個資或訂位編號。</div></div>
-<div class="toolbar"><div><strong>行程事項</strong><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><button id="refresh" type="button">重新整理</button></div></div>
+<div class="toolbar"><div><strong>行程事項</strong><div id="offline-notice" class="offline-notice hide" role="status">📴 離線唯讀 · 顯示最後一次同步的行程，恢復連線後才能編輯</div><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><button id="refresh" type="button">重新整理</button></div></div>
 <div class="calendar-wrap"><div class="calendar" id="calendar" aria-label="2027 年一月三十一日至二月十三日旅遊行事曆"></div></div>
 <div class="mobile-calendar" id="mobile-calendar">
 	<section class="mobile-overview" aria-label="選擇行程日期">
@@ -281,7 +283,40 @@ function initialMobileDate(){
 	const localDate=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
 	return dates.includes(localDate)?localDate:"2027-02-01";
 }
-let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate=initialMobileDate();
+const LOCAL_ITINERARY_KEY="seoul-trip-2027-last-synced-v1";
+function loadSavedItinerary(){
+	try{
+		const data=JSON.parse(localStorage.getItem(LOCAL_ITINERARY_KEY)||"null");
+		if(data&&Array.isArray(data.items)){
+			return data.items.filter(e=>e&&dates.includes(e.date)&&typeof e.title==="string");
+		}
+	}catch(e){console.warn("離線行程資料無法讀取",e)}
+	return [];
+}
+function saveItineraryLocally(){
+	try{
+		localStorage.setItem(LOCAL_ITINERARY_KEY,JSON.stringify({
+			savedAt:new Date().toISOString(),
+			items:items.map(e=>({id:e.id,date:e.date,time:e.time||"",title:e.title,notes:e.notes||""}))
+		}));
+	}catch(e){console.warn("無法將行程儲存至本機",e)}
+}
+let items=loadSavedItinerary(),db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate=initialMobileDate();
+let serverAvailable=false;
+function updateConnectionUI(){
+	const online=navigator.onLine&&serverAvailable;
+	enabled=Boolean(online);
+	el("offline-notice").classList.toggle("hide",online);
+	if(!online){
+		status(items.length?"離線唯讀 · 顯示本機最後同步的行程":"離線唯讀 · 目前沒有已儲存的行程，請先連線同步");
+		if(!editor.classList.contains("hide"))closeEditor();
+	}else{
+		status("已同步，免登入即可新增、修改及刪除");
+	}
+	render();
+}
+window.addEventListener("offline",()=>{serverAvailable=false;updateConnectionUI()});
+window.addEventListener("online",()=>{serverAvailable=false;updateConnectionUI()});
 function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((isHoliday(date,i))?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort(compareItineraryItems).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=displayEventTitle(e);btn.append(strong);if(e.time){const time=document.createElement("span");time.className="event-time";time.textContent=e.time;btn.append(time)}if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
@@ -372,7 +407,7 @@ function renderMobile(){
 	add.textContent="＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;el("category-options").querySelector(`input[value="${e?eventCategory(e):"other"}"]`).checked=true;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?plainEventTitle(e.title):"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||!navigator.onLine||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;el("category-options").querySelector(`input[value="${e?eventCategory(e):"other"}"]`).checked=true;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?plainEventTitle(e.title):"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function syncTimeMode(){
 	const fixed=el("time-mode").value==="fixed";
 	el("time-field").classList.toggle("hide",!fixed);
@@ -412,13 +447,27 @@ async function boot(){
 const config=window.SEOUL_FIREBASE_CONFIG;
 if(!config?.apiKey||!config?.projectId){render();return}
 try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").classList.add("hide");status("雲端連線中…");
-unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));enabled=true;status("已同步，免登入即可新增、修改及刪除");render()},errorText);
+unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{
+	// Only server-confirmed snapshots replace the last trustworthy offline copy.
+	if(!snapshot.metadata.fromCache){
+		items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));
+		serverAvailable=true;
+		saveItineraryLocally();
+	}else{
+		serverAvailable=false;
+	}
+	updateConnectionUI();
+},error=>{
+	serverAvailable=false;
+	updateConnectionUI();
+	if(navigator.onLine)errorText(error);
+});
 }catch(e){errorText(e)}
 }
 el("event-form").addEventListener("submit",async ev=>{
 	ev.preventDefault();
 	clearFormFeedback();
-	if(!enabled||!db){
+	if(!enabled||!db||!navigator.onLine){
 		showFormFeedback("尚未連線到 Firebase，無法儲存。請重新整理並確認連線狀態。");
 		return;
 	}
@@ -470,8 +519,13 @@ el("event-form").addEventListener("submit",async ev=>{
 		saveButton.textContent="儲存到共用行事曆";
 	}
 });
-el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
-render();boot();
+el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!navigator.onLine||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
+render();
+updateConnectionUI();
+boot();
+if("serviceWorker" in navigator){
+	window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("離線模式註冊失敗",e)));
+}
 </script>
 <script src="./calendar-config.js"></script>
 <nav class="bottom-nav" aria-label="主要導覽"><a href="./" aria-current="page"><span class="nav-icon" aria-hidden="true">▦</span>行事曆</a><a href="./attractions.html"><span class="nav-icon" aria-hidden="true">⌖</span>景點介紹</a></nav>
