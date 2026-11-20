@@ -176,6 +176,40 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 	.category-face{min-height:68px}
 	.category-emoji{font-size:24px}
 }
+
+/* Desktop calendar: use wide day columns instead of squeezing seven days into 1120px. */
+@media(min-width:701px){
+	main{max-width:1600px;padding:22px 20px 50px}
+	.calendar-wrap{
+		max-width:100%;
+		overflow-x:auto;
+		overflow-y:hidden;
+		-webkit-overflow-scrolling:touch;
+		scrollbar-gutter:stable;
+		border-radius:12px;
+		border-color:#ced9db;
+	}
+	.calendar{
+		grid-template-columns:repeat(7,minmax(192px,1fr));
+		min-width:1344px;
+	}
+	.day{min-width:0;min-height:225px}
+	.day-head{font-size:14px;line-height:1.45;padding:10px 9px}
+	.day-items{gap:7px;padding:8px}
+	.event{
+		display:block;
+		width:100%;
+		padding:9px 10px;
+		font-size:14px;
+		line-height:1.5;
+		white-space:normal;
+		word-break:normal;
+		overflow-wrap:break-word;
+	}
+	.event strong{font-weight:700}
+	.event small{margin-top:4px;font-size:12px;line-height:1.35}
+	.add{margin-top:7px;padding:9px 6px}
+}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
