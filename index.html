@@ -111,6 +111,26 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 	.mobile-detail .timeline-card .event-notes{display:block;font-size:13px;color:#65757a;margin-top:5px;line-height:1.5}
 	.mobile-detail .mobile-add{min-height:38px}
 }
+
+/* Free-form travel scheduling: mobile grouped presentation */
+@media(max-width:700px){
+	.mobile-group-heading{font-size:12px;font-weight:800;letter-spacing:.02em;color:#5b717a;margin:4px 0 10px}
+	.mobile-flex-section,.mobile-scheduled-section{margin:7px 0 14px}
+	.mobile-scheduled-section{border-top:1px solid var(--border);padding-top:14px}
+	.mobile-scheduled-section:first-child{border-top:0;padding-top:0}
+	.mobile-flex-list{display:flex;flex-direction:column;gap:8px}
+	.mobile-detail .flex-card{
+		display:block;width:100%;min-width:0;border:1px solid #d3dfe9;
+		border-left:3px solid #7299ba;background:#f0f5fa;
+		border-radius:11px;padding:12px 13px;text-align:left;
+		white-space:pre-wrap;overflow-wrap:anywhere
+	}
+	.mobile-detail .flex-card strong{display:block;font-size:15px;line-height:1.4;color:#203a44}
+	.mobile-detail .flex-card .event-notes{display:block;font-size:13px;color:#65757a;margin-top:5px;line-height:1.5}
+	.mobile-detail .timeline-time::after{bottom:-12px}
+	.mobile-detail .timeline-row:last-child .timeline-time::after{display:none}
+	#time-field.hide{display:none}
+}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
@@ -129,7 +149,7 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 		<div id="mobile-events"></div>
 	</section>
 </div>
-<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間（選填）<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
+<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
 
 </main>
 <script type="module">
@@ -167,23 +187,25 @@ function renderMobile(){
 	el("mobile-date-heading").textContent=names[dayIndex]||"";
 	const todayItems=items.filter(e=>e.date===activeDate).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
 
+
 	if(!todayItems.length){
 		const empty=document.createElement("div");
 		empty.className="empty-note";
 		empty.textContent="尚未安排事項";
 		eventsEl.append(empty);
 	}else{
-		const timeline=document.createElement("div");
-		timeline.className="mobile-timeline";
-		todayItems.forEach(e=>{
-			const row=document.createElement("div");
-			row.className="timeline-row";
-			const time=document.createElement("div");
-			time.className="timeline-time"+(e.time?"":" no-time");
-			time.textContent=e.time||"未定";
+		const flexible=todayItems.filter(e=>!e.time);
+		const scheduled=todayItems.filter(e=>!!e.time);
+		const heading=(label)=>{
+			const h=document.createElement("h3");
+			h.className="mobile-group-heading";
+			h.textContent=label;
+			return h;
+		};
+		const eventCard=(e,cls)=>{
 			const card=document.createElement("button");
 			card.type="button";
-			card.className="timeline-card";
+			card.className=cls;
 			const title=document.createElement("strong");
 			title.textContent=e.title;
 			card.append(title);
@@ -194,17 +216,50 @@ function renderMobile(){
 				card.append(note);
 			}
 			card.addEventListener("click",()=>openEditor(activeDate,e));
-			row.append(time,card);
-			timeline.append(row);
-		});
-		eventsEl.append(timeline);
+			return card;
+		};
+		if(flexible.length){
+			const section=document.createElement("section");
+			section.className="mobile-flex-section";
+			section.append(heading("☀ 全天／彈性安排"));
+			const list=document.createElement("div");
+			list.className="mobile-flex-list";
+			flexible.forEach(e=>list.append(eventCard(e,"flex-card")));
+			section.append(list);
+			eventsEl.append(section);
+		}
+		if(scheduled.length){
+			const section=document.createElement("section");
+			section.className="mobile-scheduled-section";
+			section.append(heading("◷ 固定時間行程"));
+			const timeline=document.createElement("div");
+			timeline.className="mobile-timeline";
+			scheduled.forEach(e=>{
+				const row=document.createElement("div");
+				row.className="timeline-row";
+				const time=document.createElement("div");
+				time.className="timeline-time";
+				time.textContent=e.time;
+				row.append(time,eventCard(e,"timeline-card"));
+				timeline.append(row);
+			});
+			section.append(timeline);
+			eventsEl.append(section);
+		}
 	}
 	const add=el("mobile-add");
 	add.disabled=!enabled;
 	add.textContent="＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time").value=e?.time||"";el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function syncTimeMode(){
+	const fixed=el("time-mode").value==="fixed";
+	el("time-field").classList.toggle("hide",!fixed);
+	el("time").required=fixed;
+	if(!fixed)el("time").value="";
+}
+el("time-mode").addEventListener("change",syncTimeMode);
 function closeEditor(){editor.classList.add("hide");selectedId=null;el("event-form").reset()}
 el("cancel").addEventListener("click",closeEditor);
 el("refresh").addEventListener("click",()=>location.reload());
@@ -218,7 +273,7 @@ try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").cla
 unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));enabled=true;status("已同步，免登入即可新增、修改及刪除");render()},errorText);
 }catch(e){errorText(e)}
 }
-el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();if(!enabled||!db)return;const payload={date:dateInput.value,time:el("time").value,title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||!payload.title)return;el("save").disabled=true;try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e)}finally{el("save").disabled=false}});
+el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();if(!enabled||!db)return;const payload={date:dateInput.value,time:el("time-mode").value==="fixed"?el("time").value:"",title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||!payload.title)return;el("save").disabled=true;try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e)}finally{el("save").disabled=false}});
 el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
 render();boot();
 </script>
