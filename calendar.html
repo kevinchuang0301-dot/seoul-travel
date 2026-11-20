@@ -6,7 +6,7 @@
 </style></head><body>
 <header><a href="./">← 返回景點介紹</a><h1>2027 春節共同旅遊行事曆</h1><p>A、B 團 2/3 會合後的共同安排｜1/31～2/13（兩週）</p></header>
 <main>
-<div id="config-notice" class="notice"><strong>多人同步尚未啟用</strong><div class="hint">行事曆已建立，但需要設定 Firebase 專案才能讓不同裝置共用資料。設定完成前，不能新增或修改事項，避免誤以為已儲存。</div></div>
+<div id="config-notice" class="notice"><strong>多人同步尚未啟用</strong><div class="hint">行事曆已建立。請先設定 Firebase 專案與 Firestore 規則才能多人共用；設定前無法儲存。啟用免登入共用後，任何取得網址的人都可能閱讀或修改行程，請勿填入個資或訂位編號。</div></div>
 <div class="toolbar"><div><strong>共同活動</strong><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><span class="hint">兩週共 14 天 · 星期日開始 · 初始無事項</span><button id="refresh" type="button">重新整理</button></div></div>
 <div class="calendar-wrap"><div class="calendar" id="calendar" aria-label="2027 年一月三十一日至二月十三日共同旅遊行事曆"></div></div>
 <section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期<select id="date" required></select></label><label>時間（選填）<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
@@ -15,14 +15,13 @@
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getFirestore,collection,onSnapshot,addDoc,updateDoc,deleteDoc,doc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import {getAuth,signInWithPopup,GoogleAuthProvider,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 const dates=Array.from({length:14},(_,i)=>{const d=new Date(2027,0,31+i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")});
 const weekdays=["日","一","二","三","四","五","六"];
 const lunar={"2027-02-04":"小年夜","2027-02-05":"除夕","2027-02-06":"初一","2027-02-07":"初二","2027-02-08":"初三","2027-02-09":"初四","2027-02-10":"初五","2027-02-11":"開工"};
 const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const label=m+"/"+d+"（"+weekdays[new Date(y,m-1,d).getDay()]+"）";return label+(lunar[date]?" "+lunar[date]:"")});
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
 const dateInput=el("date");for(let i=0;i<dates.length;i++){let opt=document.createElement("option");opt.value=dates[i];opt.textContent=names[i];dateInput.append(opt);}
-let items=[],db=null,auth=null,enabled=false,selectedId=null,unsubscribe=null,currentUser=null;
+let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null;
 function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent=date<"2027-02-03"?"會合前不記錄":"＋ 新增事項";add.disabled=!enabled||date<"2027-02-03";add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)})}
 function openEditor(date,e=null){if(!enabled||date<"2027-02-03")return;selectedId=e?.id||null;dateInput.value=date;el("time").value=e?.time||"";el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯共同事項":"新增共同事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function closeEditor(){editor.classList.add("hide");selectedId=null;el("event-form").reset()}
@@ -33,10 +32,8 @@ function errorText(e){status("操作失敗："+(e?.message||String(e)))}
 async function boot(){
 const config=window.SEOUL_FIREBASE_CONFIG;
 if(!config?.apiKey||!config?.projectId){render();return}
-try{const app=initializeApp(config);db=getFirestore(app);auth=getAuth(app);el("config-notice").classList.add("hide");
-const login=document.createElement("button");login.type="button";login.textContent="Google 登入";el("refresh").before(login);login.addEventListener("click",async()=>{try{if(auth.currentUser)await signOut(auth);else await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){errorText(e)}});
-onAuthStateChanged(auth,user=>{currentUser=user;enabled=!!user;login.textContent=user?"登出（"+(user.email||"已登入")+"）":"Google 登入";status(user?"已連線，已登入":"已連線，請登入後編輯");render();if(!user)closeEditor()});
-unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));render()},errorText);
+try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").classList.add("hide");status("雲端連線中…");
+unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));enabled=true;status("已同步，免登入即可新增、修改及刪除");render()},errorText);
 }catch(e){errorText(e)}
 }
 el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();if(!enabled||!db)return;const payload={date:dateInput.value,time:el("time").value,title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||payload.date<"2027-02-03"||!payload.title)return;el("save").disabled=true;try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e)}finally{el("save").disabled=false}});
