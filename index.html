@@ -306,9 +306,16 @@ let serverAvailable=false;
 function updateConnectionUI(){
 	const online=navigator.onLine&&serverAvailable;
 	enabled=Boolean(online);
-	el("offline-notice").classList.toggle("hide",online);
+	const offline=!navigator.onLine;
+	const notice=el("offline-notice");
+	notice.classList.toggle("hide",online);
+	notice.textContent=offline
+		?"📴 離線唯讀 · 顯示最後一次同步的行程，恢復連線後才能編輯"
+		:"☁ 尚未連上雲端 · 暫時唯讀，連線成功後才能編輯";
 	if(!online){
-		status(items.length?"離線唯讀 · 顯示本機最後同步的行程":"離線唯讀 · 目前沒有已儲存的行程，請先連線同步");
+		status(offline
+			?(items.length?"離線唯讀 · 顯示本機最後同步的行程":"離線唯讀 · 尚無已儲存的行程，請先連線同步")
+			:(items.length?"等待雲端連線 · 目前顯示本機已存行程":"等待雲端連線…"));
 		if(!editor.classList.contains("hide"))closeEditor();
 	}else{
 		status("已同步，免登入即可新增、修改及刪除");
