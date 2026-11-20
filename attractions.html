@@ -252,4 +252,9 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 <footer>首爾區域介紹｜弘大 × 蠶室 × 明洞 · 繁體中文</footer>
 <script>function selectArea(name){for(const key of ['hongdae','jamsil','myeongdong']){const selected=key===name;document.getElementById(key).hidden=!selected;document.getElementById('tab-'+key).setAttribute('aria-selected',String(selected));}}document.querySelectorAll('[role="tab"]').forEach((node,i,list)=>node.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();let n=(i+(e.key==='ArrowRight'?1:-1)+list.length)%list.length;list[n].focus();selectArea(list[n].id.replace('tab-',''))}}));</script>
 <nav class="bottom-nav" aria-label="主要導覽"><a href="./"><span class="nav-icon" aria-hidden="true">▦</span>行事曆</a><a href="./attractions.html" aria-current="page"><span class="nav-icon" aria-hidden="true">⌖</span>景點介紹</a></nav>
+<script>
+if("serviceWorker" in navigator){
+	window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(e=>console.warn("離線快取註冊失敗",e)));
+}
+</script>
 </body></html>
