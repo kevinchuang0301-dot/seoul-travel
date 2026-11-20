@@ -118,6 +118,57 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 .tabs button{border-radius:11px;padding:10px 18px;font-size:14px}
 .tabs button[aria-selected=true]{background:#244853;color:#fff}
 @media(max-width:700px){.intro{padding:27px 0 16px}}
+
+/* Compact mobile app layout, shared between both pages */
+@media(max-width:700px){
+	.page-hero{padding:12px 16px 14px;text-align:left}
+	.page-hero .eyebrow{font-size:10px;letter-spacing:.10em}
+	.page-hero h1{font-size:20px;line-height:1.25;margin:3px 0 2px}
+	.page-hero p{font-size:11px;line-height:1.4}
+	body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+	.bottom-nav{
+		min-height:56px;
+		grid-template-columns:repeat(2,minmax(0,1fr));
+		gap:8px;
+		padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px));
+		background:rgba(255,255,255,.98);
+		backdrop-filter:blur(12px)
+	}
+	.bottom-nav a{min-height:44px;gap:1px;padding:4px 8px;font-size:12px}
+	.bottom-nav .nav-icon{font-size:20px}
+}
+
+@media(max-width:700px){
+	main{padding:0 14px}
+	.intro{padding:16px 0 8px}
+	.intro .eyebrow{display:none}
+	.intro h2{font-size:21px;margin:0 0 4px}
+	.intro p{font-size:13px;line-height:1.5;margin:0}
+	.tabs{
+		position:sticky;top:0;z-index:20;
+		display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+		gap:5px;margin:8px -14px 14px;padding:9px 14px;
+		background:rgba(246,245,241,.98);
+		backdrop-filter:blur(12px);
+		border-bottom:1px solid var(--border);
+	}
+	.tabs button{padding:10px 4px;min-height:42px;border-radius:10px;font-size:13px;white-space:nowrap}
+	.area-intro{padding:13px 15px;margin-bottom:13px;border-radius:12px}
+	.area-intro h2{font-size:19px;margin-bottom:4px}
+	.area-intro p{font-size:13px;line-height:1.5}
+	.grid{grid-template-columns:minmax(0,1fr);gap:12px}
+	.card{border-radius:14px;box-shadow:0 3px 12px #152f3409}
+	.photo{height:auto;aspect-ratio:16/9}
+	.photo img{height:100%}
+	.body{padding:13px 15px 15px}
+	.body .eyebrow{font-size:10px;letter-spacing:.05em}
+	.body h3{font-size:19px;margin:5px 0 7px}
+	.body p{font-size:13px;line-height:1.55}
+	.links{margin-top:12px;gap:8px 15px}
+	.links a{font-size:12px}
+	.compare{padding:24px 0}
+	.compare h2{font-size:24px;margin:8px 0}
+}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./">行事曆</a><a href="./attractions.html" class="active" aria-current="page">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>弘大 × 蠶室 × 明洞</h1><p>從 K-POP 街頭文化，到樂園、湖景與城市天際線，探索首爾熱門景點。</p></header>
@@ -135,5 +186,5 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 </tbody></table></div><p class="note">圖片由第三方網站載入，可能受連線與防盜連限制；請點選「照片來源」查看原始網頁。照片權利仍屬原作者或權利人，公開展示與轉載須遵守原始網站規範。各景點營業資訊請以官方公告為準。</p></section></main>
 <footer>首爾區域介紹｜弘大 × 蠶室 × 明洞 · 繁體中文</footer>
 <script>function selectArea(name){for(const key of ['hongdae','jamsil','myeongdong']){const selected=key===name;document.getElementById(key).hidden=!selected;document.getElementById('tab-'+key).setAttribute('aria-selected',String(selected));}}document.querySelectorAll('[role="tab"]').forEach((node,i,list)=>node.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();let n=(i+(e.key==='ArrowRight'?1:-1)+list.length)%list.length;list[n].focus();selectArea(list[n].id.replace('tab-',''))}}));</script>
-<div class="bottom-nav" aria-label="主要導覽"><a href="./"><span class="nav-icon" aria-hidden="true">▦</span>行事曆</a><a href="./attractions.html" aria-current="page"><span class="nav-icon" aria-hidden="true">⌖</span>景點介紹</a></div>
+<nav class="bottom-nav" aria-label="主要導覽"><a href="./"><span class="nav-icon" aria-hidden="true">▦</span>行事曆</a><a href="./attractions.html" aria-current="page"><span class="nav-icon" aria-hidden="true">⌖</span>景點介紹</a></nav>
 </body></html>
