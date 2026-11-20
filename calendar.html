@@ -27,14 +27,15 @@
 	.mobile-days button.selected .dot{background:#b7e8d3}
 	.mobile-days button .dot.empty{visibility:hidden}
 	.mobile-days button .mini{font-size:9px;font-weight:500;line-height:1}
-	.mobile-detail h2{font-size:19px;margin:0 0 10px}
+	.mobile-detail-header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+	.mobile-detail h2{font-size:19px;margin:0}
 	.mobile-detail .holiday-note{font-size:12px;color:#b23838}
 	.mobile-detail .empty-note{padding:18px 0;text-align:center;color:var(--muted);font-size:14px}
 	.mobile-detail .mobile-event{display:block;width:100%;border:1px solid #c6e0e4;background:#eff8f9;padding:12px;border-radius:10px;text-align:left;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 	.mobile-detail .mobile-event strong{font-size:15px}
 	.mobile-detail .mobile-event .event-time{font-size:13px;color:#366d78;display:block;margin-bottom:4px}
 	.mobile-detail .mobile-event .event-notes{font-size:13px;color:var(--muted);display:block;margin-top:6px}
-	.mobile-detail .mobile-add{width:100%;margin-top:12px;border:1px dashed #91aab0;background:white;color:#244853;padding:12px;font-weight:700}
+	.mobile-detail .mobile-add{flex-shrink:0;margin:0;border:1px dashed #91aab0;background:white;color:#244853;padding:8px 10px;font-size:13px;font-weight:700}
 	.mobile-detail .mobile-add:disabled{color:var(--muted)}
 	.fields{grid-template-columns:1fr}
 	.full{grid-column:span 1}
@@ -53,9 +54,8 @@
 		<div class="mobile-days" id="mobile-days"></div>
 	</section>
 	<section class="mobile-detail" aria-live="polite">
-		<h2 id="mobile-date-heading"></h2>
+		<div class="mobile-detail-header"><h2 id="mobile-date-heading"></h2><button type="button" class="mobile-add" id="mobile-add">＋ 新增事項</button></div>
 		<div id="mobile-events"></div>
-		<button type="button" class="mobile-add" id="mobile-add">＋ 新增事項</button>
 	</section>
 </div>
 <section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間（選填）<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
