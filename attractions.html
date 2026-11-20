@@ -120,6 +120,22 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 @media(max-width:700px){.intro{padding:27px 0 16px}}
 
 /* Compact mobile app layout, shared between both pages */
+/* Mobile navigation must never inherit top:0 from sticky page navigation. */
+@media(max-width:700px){
+	nav.bottom-nav{
+		position:fixed;
+		top:auto;
+		bottom:0;
+		left:0;
+		right:0;
+		height:auto;
+		max-height:calc(70px + env(safe-area-inset-bottom,0px));
+		min-height:0;
+		align-content:center;
+	}
+	nav.bottom-nav a{align-self:center}
+}
+
 @media(max-width:700px){
 	.page-hero{padding:12px 16px 14px;text-align:left}
 	.page-hero .eyebrow{font-size:10px;letter-spacing:.10em}
