@@ -453,8 +453,8 @@ function errorText(e){status("操作失敗："+(e?.message||String(e)))}
 async function boot(){
 const config=window.SEOUL_FIREBASE_CONFIG;
 if(!config?.apiKey||!config?.projectId){render();return}
-try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").classList.add("hide");status("雲端連線中…");
-unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{
+try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").classList.add("hide");if(navigator.onLine)status("雲端連線中…");
+unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),{includeMetadataChanges:true},snapshot=>{
 	// Only server-confirmed snapshots replace the last trustworthy offline copy.
 	if(!snapshot.metadata.fromCache){
 		items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));
