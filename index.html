@@ -177,37 +177,41 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 	.category-emoji{font-size:24px}
 }
 
-/* Desktop calendar: use wide day columns instead of squeezing seven days into 1120px. */
+/* Balanced desktop calendar: readable cards without excessive horizontal width. */
 @media(min-width:701px){
-	main{max-width:1600px;padding:22px 20px 50px}
+	main{max-width:1280px;padding:22px 18px 50px}
 	.calendar-wrap{
 		max-width:100%;
 		overflow-x:auto;
 		overflow-y:hidden;
-		-webkit-overflow-scrolling:touch;
-		scrollbar-gutter:stable;
+		border:1px solid #cbd8db;
 		border-radius:12px;
-		border-color:#ced9db;
+		background:#fff;
 	}
 	.calendar{
-		grid-template-columns:repeat(7,minmax(192px,1fr));
-		min-width:1344px;
+		grid-template-columns:repeat(7,minmax(160px,1fr));
+		min-width:1120px;
 	}
-	.day{min-width:0;min-height:225px}
-	.day-head{font-size:14px;line-height:1.45;padding:10px 9px}
-	.day-items{gap:7px;padding:8px}
+	.day{min-width:0;min-height:230px}
+	.day-head{font-size:14px;line-height:1.45;padding:10px 8px}
+	.day-items{gap:8px;padding:8px}
 	.event{
-		display:block;
+		display:flex;
+		flex-direction:column;
+		align-items:flex-start;
+		gap:4px;
 		width:100%;
-		padding:9px 10px;
+		padding:9px;
 		font-size:14px;
-		line-height:1.5;
+		line-height:1.4;
+		text-align:left;
 		white-space:normal;
 		word-break:normal;
-		overflow-wrap:break-word;
+		overflow-wrap:anywhere;
 	}
-	.event strong{font-weight:700}
-	.event small{margin-top:4px;font-size:12px;line-height:1.35}
+	.event strong{display:block;font-weight:700}
+	.event .event-time{display:block;color:#52727d;font-size:12px;line-height:1.25;font-variant-numeric:tabular-nums}
+	.event small{display:block;color:#63757b;font-size:12px;line-height:1.35}
 	.add{margin-top:7px;padding:9px 6px}
 }
 </style></head><body>
@@ -257,7 +261,7 @@ const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const lab
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
 const dateInput=el("date");for(let i=0;i<dates.length;i++){let opt=document.createElement("option");opt.value=dates[i];opt.textContent=names[i];dateInput.append(opt);}
 let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate="2027-02-03";
-function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+displayEventTitle(e);btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
+function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=displayEventTitle(e);btn.append(strong);if(e.time){const time=document.createElement("span");time.className="event-time";time.textContent=e.time;btn.append(time)}if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
 	const daysEl=el("mobile-days");
