@@ -157,6 +157,8 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 	.mobile-detail .flex-card .event-notes{display:block;font-size:13px;color:#65757a;margin-top:5px;line-height:1.5}
 	#time-field.hide{display:none}
 }
+.form-feedback{margin-top:12px;padding:12px 14px;border:1px solid #e9b5a9;background:#fff0eb;border-radius:10px;color:#98352b;font-size:14px;line-height:1.6}
+.form-feedback.hide{display:none}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
@@ -175,7 +177,7 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 		<div id="mobile-events"></div>
 	</section>
 </div>
-<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
+<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div><div id="form-feedback" class="form-feedback hide" role="alert" aria-live="assertive"></div></form></section>
 
 </main>
 <script type="module">
@@ -278,7 +280,7 @@ function renderMobile(){
 	add.textContent="＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function syncTimeMode(){
 	const fixed=el("time-mode").value==="fixed";
 	el("time-field").classList.toggle("hide",!fixed);
@@ -286,7 +288,27 @@ function syncTimeMode(){
 	if(!fixed)el("time").value="";
 }
 el("time-mode").addEventListener("change",syncTimeMode);
-function closeEditor(){editor.classList.add("hide");selectedId=null;el("event-form").reset()}
+function clearFormFeedback(){
+	const feedback=el("form-feedback");
+	feedback.textContent="";
+	feedback.classList.add("hide");
+}
+function showFormFeedback(message){
+	const feedback=el("form-feedback");
+	feedback.textContent=message;
+	feedback.classList.remove("hide");
+}
+function saveErrorMessage(error){
+	const code=String(error?.code||"");
+	if(code.includes("permission-denied")){
+		return "雲端拒絕儲存。若是 1/31～2/2 的行程，請先確認 Firebase Firestore 規則已將可編輯起始日期改成 2027-01-31，並按「發布」。目前輸入內容會保留。";
+	}
+	if(code.includes("unavailable")||code.includes("network")){
+		return "目前無法連接雲端，請檢查網路後重試。輸入內容會保留。";
+	}
+	return "儲存失敗："+(error?.message||String(error))+"。請確認 Firebase 設定與網路連線。";
+}
+function closeEditor(){editor.classList.add("hide");selectedId=null;el("event-form").reset();clearFormFeedback()}
 el("cancel").addEventListener("click",closeEditor);
 el("refresh").addEventListener("click",()=>location.reload());
 el("mobile-refresh").addEventListener("click",()=>location.reload());
@@ -299,7 +321,7 @@ try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").cla
 unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));enabled=true;status("已同步，免登入即可新增、修改及刪除");render()},errorText);
 }catch(e){errorText(e)}
 }
-el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();if(!enabled||!db)return;const payload={date:dateInput.value,time:el("time-mode").value==="fixed"?el("time").value:"",title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||!payload.title)return;el("save").disabled=true;try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e)}finally{el("save").disabled=false}});
+el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();clearFormFeedback();if(!enabled||!db){showFormFeedback("雲端尚未連線，無法儲存。請確認 Firebase 連線狀態。");return}const payload={date:dateInput.value,time:el("time-mode").value==="fixed"?el("time").value:"",title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||!payload.title){showFormFeedback("請確認日期及事項名稱後再儲存。");return}el("save").disabled=true;el("save").textContent="儲存中…";try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e);showFormFeedback(saveErrorMessage(e))}finally{el("save").disabled=false;el("save").textContent="儲存到共用行事曆"}});
 el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
 render();boot();
 </script>
