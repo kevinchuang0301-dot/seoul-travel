@@ -159,6 +159,7 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 }
 .form-feedback{margin-top:12px;padding:12px 14px;border:1px solid #e9b5a9;background:#fff0eb;border-radius:10px;color:#98352b;font-size:14px;line-height:1.6}
 .form-feedback.hide{display:none}
+.form-feedback[data-kind="pending"]{background:#eef6f9;border-color:#bdd7e2;color:#244853}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
@@ -177,7 +178,7 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 		<div id="mobile-events"></div>
 	</section>
 </div>
-<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div><div id="form-feedback" class="form-feedback hide" role="alert" aria-live="assertive"></div></form></section>
+<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form" novalidate><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div><div id="form-feedback" class="form-feedback hide" role="alert" aria-live="assertive"></div></form></section>
 
 </main>
 <script type="module">
@@ -291,11 +292,13 @@ el("time-mode").addEventListener("change",syncTimeMode);
 function clearFormFeedback(){
 	const feedback=el("form-feedback");
 	feedback.textContent="";
+	feedback.dataset.kind="";
 	feedback.classList.add("hide");
 }
-function showFormFeedback(message){
+function showFormFeedback(message,kind="error"){
 	const feedback=el("form-feedback");
 	feedback.textContent=message;
+	feedback.dataset.kind=kind;
 	feedback.classList.remove("hide");
 }
 function saveErrorMessage(error){
@@ -321,7 +324,61 @@ try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").cla
 unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));enabled=true;status("已同步，免登入即可新增、修改及刪除");render()},errorText);
 }catch(e){errorText(e)}
 }
-el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();clearFormFeedback();if(!enabled||!db){showFormFeedback("雲端尚未連線，無法儲存。請確認 Firebase 連線狀態。");return}const payload={date:dateInput.value,time:el("time-mode").value==="fixed"?el("time").value:"",title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||!payload.title){showFormFeedback("請確認日期及事項名稱後再儲存。");return}el("save").disabled=true;el("save").textContent="儲存中…";try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e);showFormFeedback(saveErrorMessage(e))}finally{el("save").disabled=false;el("save").textContent="儲存到共用行事曆"}});
+el("event-form").addEventListener("submit",async ev=>{
+	ev.preventDefault();
+	clearFormFeedback();
+	if(!enabled||!db){
+		showFormFeedback("尚未連線到 Firebase，無法儲存。請重新整理並確認連線狀態。");
+		return;
+	}
+	const mode=el("time-mode").value;
+	const selectedTime=el("time").value;
+	const title=el("title").value.trim();
+	if(!title){
+		showFormFeedback("請先填寫事項名稱。");
+		el("title").focus();
+		return;
+	}
+	if(mode==="fixed"&&!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(selectedTime)){
+		showFormFeedback("選擇「指定時間」時，請填寫有效的開始時間。");
+		el("time").focus();
+		return;
+	}
+	if(!dates.includes(dateInput.value)){
+		showFormFeedback("日期資料不正確，請重新選擇行事曆日期。");
+		return;
+	}
+	const payload={
+		date:dateInput.value,
+		time:mode==="fixed"?selectedTime:"",
+		title,
+		notes:el("notes").value.trim(),
+		updatedAt:serverTimestamp()
+	};
+	const saveButton=el("save");
+	saveButton.disabled=true;
+	saveButton.textContent="儲存中…";
+	showFormFeedback("正在將行程儲存到 Firebase，請勿重複點擊。","pending");
+	let warningTimer=setTimeout(()=>{
+		showFormFeedback("雲端回應較慢，仍在等待儲存結果。請確認網路連線；若持續沒有結果，可重新整理後檢查事項是否已同步，避免重複新增。","pending");
+	},8000);
+	try{
+		if(selectedId){
+			await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);
+		}else{
+			await addDoc(collection(db,"shared-itinerary-2027"),payload);
+		}
+		closeEditor();
+		status("已儲存，其他人將同步看到變更");
+	}catch(e){
+		errorText(e);
+		showFormFeedback(saveErrorMessage(e));
+	}finally{
+		clearTimeout(warningTimer);
+		saveButton.disabled=false;
+		saveButton.textContent="儲存到共用行事曆";
+	}
+});
 el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
 render();boot();
 </script>
