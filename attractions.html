@@ -5,23 +5,89 @@
 :root{--bg:#f6f5f1;--ink:#202c30;--muted:#667176;--line:#e4e5df;--accent:#dc6b47}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--ink);line-height:1.65}a{color:inherit}header{background:#192e34;color:white;padding:80px 24px 70px;text-align:center;background-image:linear-gradient(110deg,#162b35de,#223c42b5),url('https://dimg.donga.com/wps/NEWS/IMAGE/2023/05/19/119380240.1.jpg');background-position:center;background-size:cover}header h1{font-size:clamp(38px,6vw,72px);line-height:1.18;margin:8px 0 18px;letter-spacing:-.04em}header p{max-width:630px;margin:0 auto;color:#e1ebeb;font-size:17px}.eyebrow{color:var(--accent);font-size:12px;font-weight:900;letter-spacing:.15em;text-transform:uppercase}header .eyebrow{color:#ffd2b9}nav{position:sticky;top:0;z-index:10;background:#fffffff2;backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}nav .inner{max-width:1120px;margin:auto;padding:12px 22px;display:flex;gap:22px;justify-content:space-between;align-items:center}nav strong{font-size:14px}nav .items{display:flex;gap:18px;font-size:13px;font-weight:700}nav a{text-decoration:none}main{max-width:1120px;margin:auto;padding:0 22px}.intro{padding:62px 0 28px}.intro h2{font-size:clamp(28px,4vw,44px);margin:8px 0}.intro p{color:var(--muted);max-width:800px}.tabs{display:flex;gap:8px;margin:24px 0;flex-wrap:wrap}.tabs button{cursor:pointer;font:800 15px system-ui,"Noto Sans TC",sans-serif;padding:12px 22px;border-radius:999px;border:1px solid var(--line);background:white;color:var(--ink)}.tabs button[aria-selected=true]{background:#233a40;color:white}.panel[hidden]{display:none}.area-intro{padding:24px 28px;border-radius:20px;background:white;border:1px solid var(--line);margin:0 0 20px}.area-intro h2{margin:0 0 8px;font-size:28px}.area-intro p{margin:0;color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}.card{background:white;border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 6px 18px #1d32350d}.photo{display:block;position:relative;height:245px;background:#dce3e2;overflow:hidden}.photo img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .3s}.photo:hover img{transform:scale(1.035)}.fallback{display:none;position:absolute;inset:0;align-items:center;justify-content:center;padding:20px;color:#496068;text-align:center;font-weight:700}.photo.broken .fallback{display:flex}.photo.broken img{display:none}.body{padding:22px 24px}.body h3{font-size:24px;line-height:1.25;margin:10px 0}.body p{color:var(--muted);font-size:14px;margin:0}.links{display:flex;gap:15px;flex-wrap:wrap;margin-top:18px}.links a{color:#287786;text-decoration:none;font-size:13px;font-weight:800}.compare{padding:70px 0}.compare h2{font-size:34px}.tablewrap{overflow:auto;border-radius:18px;border:1px solid var(--line)}table{width:100%;border-collapse:collapse;background:white;min-width:650px}th,td{text-align:left;padding:18px;border-bottom:1px solid var(--line);font-size:14px}th{background:#eef2f0}tr:last-child td{border:0}.note{font-size:12px;color:var(--muted);margin:20px 0 50px}footer{text-align:center;background:#22383e;color:#d7e2e3;padding:28px;font-size:12px}@media(max-width:700px){header{padding:68px 20px}nav .inner{padding:10px 14px}.grid{grid-template-columns:1fr}.photo{height:220px}.intro{padding:44px 0 20px}.compare{padding:45px 0}}
 
-/* Shared site navigation */
-.site-links{display:flex;align-items:center;gap:14px}
-.site-links a{display:inline-block;text-decoration:none;padding:8px 12px;border-radius:9px}
-.site-links a.active{background:#244853;color:white}
+/* Unified desktop navigation; mobile uses the bottom tab bar */
+.desktop-site-nav{
+	position:sticky;
+	top:0;
+	z-index:25;
+	background:rgba(255,255,255,.97);
+	backdrop-filter:blur(12px);
+	border-bottom:1px solid var(--line);
+	box-shadow:0 2px 12px rgba(20,43,51,.06);
+}
+.desktop-site-nav .inner{
+	max-width:1120px;
+	margin:0 auto;
+	padding:9px 24px;
+	min-height:68px;
+	display:flex;
+	justify-content:space-between;
+	align-items:center;
+	gap:24px;
+}
+.site-brand{
+	text-decoration:none;
+	white-space:nowrap;
+	font-weight:900;
+	font-size:18px;
+	letter-spacing:.08em;
+	color:#233d45;
+}
+.site-brand span{
+	font-size:12px;
+	font-weight:700;
+	letter-spacing:.1em;
+	color:#66787e;
+	margin-left:4px;
+}
+.site-links{display:flex;align-items:center;gap:8px}
+.site-links a{
+	text-decoration:none;
+	font-size:15px;
+	font-weight:750;
+	padding:10px 22px;
+	border-radius:11px;
+	color:#40545b;
+	transition:background .2s,color .2s;
+}
+.site-links a:hover{background:#edf2f3}
+.site-links a.active,.site-links a.active:hover{background:#244853;color:#fff}
 .bottom-nav{display:none}
 @media(max-width:700px){
- body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
- nav .inner{gap:12px}
- nav .items{font-size:12px;gap:9px}
- .site-links{display:none}
- .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:90;display:grid;grid-template-columns:repeat(2,1fr);background:#fff;border-top:1px solid #dce2e1;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -5px 15px #18343e12}
- .bottom-nav a{text-decoration:none;color:#60727b;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:700;border-radius:10px;padding:3px}
- .bottom-nav a[aria-current="page"]{color:#1e4c5a;background:#e8f2f4}
- .bottom-nav .nav-icon{font-size:21px;line-height:1.2}
+	body{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+	.desktop-site-nav{display:none}
+	.bottom-nav{
+		position:fixed;
+		bottom:0;
+		left:0;
+		right:0;
+		z-index:90;
+		display:grid;
+		grid-template-columns:repeat(2,1fr);
+		background:#fff;
+		border-top:1px solid #dce2e1;
+		padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));
+		box-shadow:0 -5px 15px #18343e12;
+	}
+	.bottom-nav a{
+		text-decoration:none;
+		color:#60727b;
+		text-align:center;
+		display:flex;
+		flex-direction:column;
+		align-items:center;
+		justify-content:center;
+		gap:2px;
+		font-size:12px;
+		font-weight:700;
+		border-radius:10px;
+		padding:3px;
+	}
+	.bottom-nav a[aria-current="page"]{color:#1e4c5a;background:#e8f2f4}
+	.bottom-nav .nav-icon{font-size:21px;line-height:1.2}
 }
 </style></head><body>
-<nav><div class="inner"><strong>SEOUL / AREA GUIDE</strong><div class="items"><span class="site-links"><a href="./">行事曆</a><a href="./attractions.html" class="active" aria-current="page">景點介紹</a></span><a href="#explore">推薦景點</a><a href="#compare">區域比較</a></div></div></nav>
+<nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./">行事曆</a><a href="./attractions.html" class="active" aria-current="page">景點介紹</a></div></div></nav>
 <header><div class="eyebrow">SEOUL · HONGDAE × JAMSIL</div><h1>弘大 × 蠶室 × 明洞</h1><p>從 K-POP 街頭文化，到樂園、湖景與城市天際線。認識兩個首爾熱門區域，以及值得看的實際景點。</p></header>
 <main><section class="intro" id="explore"><div class="eyebrow">01 / EXPLORE</div><h2>推薦景點與實景照片</h2><p>每一個景點使用不同的實景照片，並附照片來源與地圖。此頁僅介紹景點，不安排任何旅遊行程。</p></section>
 <div class="tabs" role="tablist" aria-label="選擇區域"><button id="tab-hongdae" role="tab" aria-controls="hongdae" aria-selected="true" onclick="selectArea('hongdae')">弘大 HONGDAE</button><button id="tab-jamsil" role="tab" aria-controls="jamsil" aria-selected="false" onclick="selectArea('jamsil')">蠶室 JAMSIL</button><button id="tab-myeongdong" role="tab" aria-controls="myeongdong" aria-selected="false" onclick="selectArea('myeongdong')">明洞 MYEONGDONG</button></div>
