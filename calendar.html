@@ -59,7 +59,7 @@
 	</section>
 </div>
 <section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間（選填）<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
-<p class="hint">1/31～2/2 僅顯示日期；2/3 起可新增、修改行程。</p>
+<p class="hint">1/31～2/13 每一天都可以新增、修改及刪除行程。</p>
 </main>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -71,7 +71,7 @@ const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const lab
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
 const dateInput=el("date");for(let i=0;i<dates.length;i++){let opt=document.createElement("option");opt.value=dates[i];opt.textContent=names[i];dateInput.append(opt);}
 let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate="2027-02-03";
-function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent=date<"2027-02-03"?"此日期不開放編輯":"＋ 新增事項";add.disabled=!enabled||date<"2027-02-03";add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
+function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
 	const daysEl=el("mobile-days");
@@ -113,11 +113,11 @@ function renderMobile(){
 		});
 	}
 	const add=el("mobile-add");
-	add.disabled=!enabled||activeDate<"2027-02-03";
-	add.textContent=activeDate<"2027-02-03"?"此日期不開放編輯":"＋ 新增事項";
+	add.disabled=!enabled;
+	add.textContent="＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||date<"2027-02-03")return;selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time").value=e?.time||"";el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time").value=e?.time||"";el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function closeEditor(){editor.classList.add("hide");selectedId=null;el("event-form").reset()}
 el("cancel").addEventListener("click",closeEditor);
 el("refresh").addEventListener("click",()=>location.reload());
@@ -131,7 +131,7 @@ try{const app=initializeApp(config);db=getFirestore(app);el("config-notice").cla
 unsubscribe=onSnapshot(query(collection(db,"shared-itinerary-2027"),orderBy("date")),snapshot=>{items=snapshot.docs.map(d=>({id:d.id,...d.data()})).filter(e=>dates.includes(e.date));enabled=true;status("已同步，免登入即可新增、修改及刪除");render()},errorText);
 }catch(e){errorText(e)}
 }
-el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();if(!enabled||!db)return;const payload={date:dateInput.value,time:el("time").value,title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||payload.date<"2027-02-03"||!payload.title)return;el("save").disabled=true;try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e)}finally{el("save").disabled=false}});
+el("event-form").addEventListener("submit",async ev=>{ev.preventDefault();if(!enabled||!db)return;const payload={date:dateInput.value,time:el("time").value,title:el("title").value.trim(),notes:el("notes").value.trim(),updatedAt:serverTimestamp()};if(!dates.includes(payload.date)||!payload.title)return;el("save").disabled=true;try{if(selectedId)await updateDoc(doc(db,"shared-itinerary-2027",selectedId),payload);else await addDoc(collection(db,"shared-itinerary-2027"),payload);closeEditor();status("已儲存，其他人將同步看到變更")}catch(e){errorText(e)}finally{el("save").disabled=false}});
 el("delete").addEventListener("click",async()=>{if(!selectedId||!enabled||!confirm("確定刪除這個共同行程？"))return;try{await deleteDoc(doc(db,"shared-itinerary-2027",selectedId));closeEditor()}catch(e){errorText(e)}});
 render();boot();
 </script>
