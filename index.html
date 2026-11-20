@@ -77,6 +77,40 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 	.page-hero h1{font-size:25px}
 	.page-hero p{font-size:13px}
 }
+
+/* Compact mobile app layout, shared between both pages */
+@media(max-width:700px){
+	.page-hero{padding:12px 16px 14px;text-align:left}
+	.page-hero .eyebrow{font-size:10px;letter-spacing:.10em}
+	.page-hero h1{font-size:20px;line-height:1.25;margin:3px 0 2px}
+	.page-hero p{font-size:11px;line-height:1.4}
+	body{padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+	.bottom-nav{
+		min-height:56px;
+		grid-template-columns:repeat(2,minmax(0,1fr));
+		gap:8px;
+		padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px));
+		background:rgba(255,255,255,.98);
+		backdrop-filter:blur(12px)
+	}
+	.bottom-nav a{min-height:44px;gap:1px;padding:4px 8px;font-size:12px}
+	.bottom-nav .nav-icon{font-size:20px}
+}
+
+@media(max-width:700px){
+	main{padding:10px 12px 25px}
+	.mobile-overview,.mobile-detail{border-radius:14px;padding:12px;margin-bottom:10px}
+	.mobile-detail .mobile-timeline{display:flex;flex-direction:column;gap:12px;padding:4px 0 6px}
+	.mobile-detail .timeline-row{display:grid;grid-template-columns:46px minmax(0,1fr);gap:11px;align-items:stretch}
+	.mobile-detail .timeline-time{position:relative;display:flex;justify-content:center;padding-top:12px;font-size:12px;font-weight:700;color:#517079;font-variant-numeric:tabular-nums}
+	.mobile-detail .timeline-time::after{content:"";position:absolute;top:34px;bottom:-13px;left:50%;width:2px;background:#cbdde0;transform:translateX(-50%)}
+	.mobile-detail .timeline-row:last-child .timeline-time::after{display:none}
+	.mobile-detail .timeline-time.no-time{font-size:11px;color:#89979a}
+	.mobile-detail .timeline-card{width:100%;min-width:0;border:1px solid #c7dfe3;border-left:3px solid #5a919b;border-radius:11px;background:#f2f8f8;text-align:left;padding:12px 13px;white-space:pre-wrap;overflow-wrap:anywhere}
+	.mobile-detail .timeline-card strong{display:block;font-size:15px;line-height:1.4;color:#203a44}
+	.mobile-detail .timeline-card .event-notes{display:block;font-size:13px;color:#65757a;margin-top:5px;line-height:1.5}
+	.mobile-detail .mobile-add{min-height:38px}
+}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
@@ -132,22 +166,38 @@ function renderMobile(){
 	const dayIndex=dates.indexOf(activeDate);
 	el("mobile-date-heading").textContent=names[dayIndex]||"";
 	const todayItems=items.filter(e=>e.date===activeDate).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+
 	if(!todayItems.length){
 		const empty=document.createElement("div");
 		empty.className="empty-note";
 		empty.textContent="尚未安排事項";
 		eventsEl.append(empty);
 	}else{
+		const timeline=document.createElement("div");
+		timeline.className="mobile-timeline";
 		todayItems.forEach(e=>{
-			const b=document.createElement("button");
-			b.type="button";
-			b.className="mobile-event";
-			if(e.time){const t=document.createElement("span");t.className="event-time";t.textContent=e.time;b.append(t)}
-			const title=document.createElement("strong");title.textContent=e.title;b.append(title);
-			if(e.notes){const note=document.createElement("span");note.className="event-notes";note.textContent=e.notes;b.append(note)}
-			b.addEventListener("click",()=>openEditor(activeDate,e));
-			eventsEl.append(b);
+			const row=document.createElement("div");
+			row.className="timeline-row";
+			const time=document.createElement("div");
+			time.className="timeline-time"+(e.time?"":" no-time");
+			time.textContent=e.time||"未定";
+			const card=document.createElement("button");
+			card.type="button";
+			card.className="timeline-card";
+			const title=document.createElement("strong");
+			title.textContent=e.title;
+			card.append(title);
+			if(e.notes){
+				const note=document.createElement("span");
+				note.className="event-notes";
+				note.textContent=e.notes;
+				card.append(note);
+			}
+			card.addEventListener("click",()=>openEditor(activeDate,e));
+			row.append(time,card);
+			timeline.append(row);
 		});
+		eventsEl.append(timeline);
 	}
 	const add=el("mobile-add");
 	add.disabled=!enabled;
