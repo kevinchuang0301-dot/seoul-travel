@@ -160,6 +160,22 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 .form-feedback{margin-top:12px;padding:12px 14px;border:1px solid #e9b5a9;background:#fff0eb;border-radius:10px;color:#98352b;font-size:14px;line-height:1.6}
 .form-feedback.hide{display:none}
 .form-feedback[data-kind="pending"]{background:#eef6f9;border-color:#bdd7e2;color:#244853}
+
+/* Shared category buttons for desktop/mobile event editor */
+.category-picker{min-width:0;margin:0;border:0;padding:0}
+.category-picker legend{font-size:13px;font-weight:650;margin-bottom:7px}
+.category-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.category-options label{display:block;min-width:0;cursor:pointer}
+.category-options input{position:absolute;opacity:0;width:1px;height:1px}
+.category-face{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:73px;padding:8px 3px;border:1px solid #c4d4d8;border-radius:11px;background:#fff;color:#294853;font-size:13px;font-weight:700;transition:border-color .15s,background .15s}
+.category-emoji{font-size:25px;line-height:1.3}
+.category-options input:checked+.category-face{background:#e2f1f3;border:2px solid #244853;padding:7px 2px;color:#183c47}
+.category-options input:focus-visible+.category-face{outline:3px solid #77aeb8;outline-offset:2px}
+@media(max-width:700px){
+	.category-options{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+	.category-face{min-height:68px}
+	.category-emoji{font-size:24px}
+}
 </style></head><body>
 <nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
 <header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
@@ -178,7 +194,13 @@ body{background:var(--bg);color:var(--ink);line-height:1.65}
 		<div id="mobile-events"></div>
 	</section>
 </div>
-<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form" novalidate><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div><div id="form-feedback" class="form-feedback hide" role="alert" aria-live="assertive"></div></form></section>
+<section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form" novalidate><div class="fields"><label>日期（固定）<input id="date-display" type="text" readonly aria-label="所選日期，不可修改"><select id="date" class="hide" tabindex="-1" aria-hidden="true"></select></label><fieldset class="category-picker full" aria-label="事項類型"><legend>事項類型</legend><div class="category-options" id="category-options">
+<label><input type="radio" name="event-category" value="flight"><span class="category-face"><span class="category-emoji" aria-hidden="true">✈️</span><span>飛機</span></span></label>
+<label><input type="radio" name="event-category" value="transport"><span class="category-face"><span class="category-emoji" aria-hidden="true">🚗</span><span>交通</span></span></label>
+<label><input type="radio" name="event-category" value="meal"><span class="category-face"><span class="category-emoji" aria-hidden="true">🍚</span><span>吃飯</span></span></label>
+<label><input type="radio" name="event-category" value="hotel"><span class="category-face"><span class="category-emoji" aria-hidden="true">🏠</span><span>飯店</span></span></label>
+<label><input type="radio" name="event-category" value="other" checked><span class="category-face"><span class="category-emoji" aria-hidden="true">📌</span><span>其他</span></span></label>
+</div></fieldset><label>時間安排<select id="time-mode"><option value="flex">全天／彈性安排（不指定時間）</option><option value="fixed">指定時間</option></select></label><label id="time-field" class="hide">開始時間<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div><div id="form-feedback" class="form-feedback hide" role="alert" aria-live="assertive"></div></form></section>
 
 </main>
 <script type="module">
@@ -186,12 +208,14 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase
 import {getFirestore,collection,onSnapshot,addDoc,updateDoc,deleteDoc,doc,serverTimestamp,query,orderBy} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const dates=Array.from({length:14},(_,i)=>{const d=new Date(2027,0,31+i);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")});
 const weekdays=["日","一","二","三","四","五","六"];
+const categoryIcons={flight:"✈️",transport:"🚗",meal:"🍚",hotel:"🏠",other:"📌"};
+const categoryIcon=value=>categoryIcons[value]||categoryIcons.other;
 const lunar={"2027-02-04":"小年夜","2027-02-05":"除夕","2027-02-06":"初一","2027-02-07":"初二","2027-02-08":"初三","2027-02-09":"初四","2027-02-10":"初五","2027-02-11":"開工"};
 const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const label=m+"/"+d+"（"+weekdays[new Date(y,m-1,d).getDay()]+"）";return label+(lunar[date]?" "+lunar[date]:"")});
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
 const dateInput=el("date");for(let i=0;i<dates.length;i++){let opt=document.createElement("option");opt.value=dates[i];opt.textContent=names[i];dateInput.append(opt);}
 let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate="2027-02-03";
-function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
+function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+categoryIcon(e.category)+" "+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
 	const daysEl=el("mobile-days");
@@ -236,7 +260,7 @@ function renderMobile(){
 			card.type="button";
 			card.className=cls;
 			const title=document.createElement("strong");
-			title.textContent=e.title;
+			title.textContent=categoryIcon(e.category)+" "+e.title;
 			card.append(title);
 			if(e.notes){
 				const note=document.createElement("span");
@@ -281,7 +305,7 @@ function renderMobile(){
 	add.textContent="＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||!dates.includes(date))return;clearFormFeedback();selectedId=e?.id||null;el("category-options").querySelector(`input[value="${categoryIcons[e?.category]?e.category:"other"}"]`).checked=true;dateInput.value=date;el("date-display").value=names[dates.indexOf(date)]||date;el("time-mode").value=e?.time?"fixed":"flex";el("time").value=e?.time||"";syncTimeMode();el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function syncTimeMode(){
 	const fixed=el("time-mode").value==="fixed";
 	el("time-field").classList.toggle("hide",!fixed);
@@ -350,6 +374,7 @@ el("event-form").addEventListener("submit",async ev=>{
 	}
 	const payload={
 		date:dateInput.value,
+		category:document.querySelector('input[name="event-category"]:checked')?.value||"other",
 		time:mode==="fixed"?selectedTime:"",
 		title,
 		notes:el("notes").value.trim(),
