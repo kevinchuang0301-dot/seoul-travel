@@ -55,8 +55,31 @@
  .bottom-nav a[aria-current="page"]{color:#1e4c5a;background:#e8f2f4}
  .bottom-nav .nav-icon{font-size:21px;line-height:1.2}
 }
+
+/* Consistent site-wide theme and page structure */
+:root{--bg:#f6f5f1;--ink:#203239;--muted:#64727a;--border:#dce2e1;--line:#dce2e1;--accent:#dc6b47}
+body{background:var(--bg);color:var(--ink);line-height:1.65}
+.desktop-site-nav{position:sticky;top:0;z-index:25;background:rgba(255,255,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);box-shadow:0 2px 12px rgba(20,43,51,.06)}
+.desktop-site-nav .inner{max-width:1120px;margin:0 auto;padding:9px 24px;min-height:68px;display:flex;justify-content:space-between;align-items:center;gap:24px}
+.site-brand{text-decoration:none;white-space:nowrap;font-weight:900;font-size:18px;letter-spacing:.08em;color:#233d45}
+.site-brand span{font-size:12px;font-weight:700;letter-spacing:.1em;color:#66787e;margin-left:4px}
+.site-links{display:flex;align-items:center;gap:8px}
+.site-links a{text-decoration:none;font-size:15px;font-weight:750;padding:10px 22px;border-radius:11px;color:#40545b;transition:background .2s,color .2s}
+.site-links a:hover{background:#edf2f3}
+.site-links a.active,.site-links a.active:hover{background:#244853;color:#fff}
+.page-hero{background:linear-gradient(120deg,#1d353d,#304d55);color:#fff;padding:35px 24px 38px;text-align:center}
+.page-hero .eyebrow{color:#ffceb2;font-size:11px;font-weight:800;letter-spacing:.14em}
+.page-hero h1{font-size:clamp(26px,3.5vw,38px);line-height:1.24;letter-spacing:-.025em;margin:8px 0}
+.page-hero p{font-size:14px;max-width:740px;margin:0 auto;color:#d3e2e5}
+@media(max-width:700px){
+	.desktop-site-nav{display:none}
+	.page-hero{padding:22px 16px 24px}
+	.page-hero h1{font-size:25px}
+	.page-hero p{font-size:13px}
+}
 </style></head><body>
-<header><nav class="site-nav" aria-label="主要導覽"><a href="./" aria-current="page">▦ 行事曆</a><a href="./attractions.html">⌖ 景點介紹</a></nav><h1>2027 春節旅遊行事曆</h1><p>2027/1/31～2/13｜兩週行程規劃</p></header>
+<nav class="desktop-site-nav" aria-label="網站主要導覽"><div class="inner"><a class="site-brand" href="./">SEOUL <span>TRIP 2027</span></a><div class="site-links"><a href="./" class="active" aria-current="page">行事曆</a><a href="./attractions.html">景點介紹</a></div></div></nav>
+<header class="page-hero"><div class="eyebrow">SEOUL TRIP · 2027</div><h1>2027 春節旅遊行事曆</h1><p>1/31～2/13 · 兩週行程規劃</p></header>
 <main>
 <div id="config-notice" class="notice"><strong>多人同步尚未啟用</strong><div class="hint">行事曆已建立。請先設定 Firebase 專案與 Firestore 規則才能多人共用；設定前無法儲存。啟用免登入共用後，任何取得網址的人都可能閱讀或修改行程，請勿填入個資或訂位編號。</div></div>
 <div class="toolbar"><div><strong>行程事項</strong><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><span class="hint">兩週共 14 天 · 星期日開始 · 初始無事項</span><button id="refresh" type="button">重新整理</button></div></div>
