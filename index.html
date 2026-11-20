@@ -256,6 +256,17 @@ const categoryFromTitle=title=>{
 const plainEventTitle=title=>String(title||"").replace(/^(?:✈️|🚗|🍚|🏠|📌)\s+/u,"");
 const eventCategory=event=>categoryFromTitle(event.title)||event.category||"other";
 const displayEventTitle=event=>categoryIcon(eventCategory(event))+" "+plainEventTitle(event.title);
+const categoryOrder={flight:0,transport:1,meal:2,hotel:3,other:4};
+function compareItineraryItems(a,b){
+	const aTime=a.time||"";
+	const bTime=b.time||"";
+	if(!aTime&&!bTime){
+		return (categoryOrder[eventCategory(a)]??4)-(categoryOrder[eventCategory(b)]??4);
+	}
+	if(!aTime)return -1;
+	if(!bTime)return 1;
+	return aTime.localeCompare(bTime);
+}
 const lunar={"2027-02-04":"小年夜","2027-02-05":"除夕","2027-02-06":"初一","2027-02-07":"初二","2027-02-08":"初三","2027-02-09":"初四","2027-02-10":"初五","2027-02-11":"開工"};
 const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const label=m+"/"+d+"（"+weekdays[new Date(y,m-1,d).getDay()]+"）";return label+(lunar[date]?" "+lunar[date]:"")});
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
@@ -267,7 +278,7 @@ function initialMobileDate(){
 	return dates.includes(localDate)?localDate:dates[0];
 }
 let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate=initialMobileDate();
-function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=displayEventTitle(e);btn.append(strong);if(e.time){const time=document.createElement("span");time.className="event-time";time.textContent=e.time;btn.append(time)}if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
+function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort(compareItineraryItems).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=displayEventTitle(e);btn.append(strong);if(e.time){const time=document.createElement("span");time.className="event-time";time.textContent=e.time;btn.append(time)}if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent="＋ 新增事項";add.disabled=!enabled;add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
 	const daysEl=el("mobile-days");
@@ -290,7 +301,7 @@ function renderMobile(){
 	});
 	const dayIndex=dates.indexOf(activeDate);
 	el("mobile-date-heading").textContent=names[dayIndex]||"";
-	const todayItems=items.filter(e=>e.date===activeDate).sort((a,b)=>(a.time||"").localeCompare(b.time||""));
+	const todayItems=items.filter(e=>e.date===activeDate).sort(compareItineraryItems);
 
 
 	if(!todayItems.length){
