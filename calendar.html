@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>2027 春節共同旅遊行事曆</title>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>2027 春節旅遊行事曆</title>
 <style>
 :root{--bg:#f5f5f1;--ink:#21353c;--muted:#64727a;--border:#d8e0e1;--blue:#d1e1f7}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.5}header{background:#1d353d;color:white;padding:28px max(18px,calc((100vw - 1120px)/2))}header a{color:#cde0e8}header h1{margin:8px 0}header p{margin:0;color:#d1dddf}main{max-width:1120px;margin:auto;padding:22px 16px 50px}button,input,textarea{font:inherit}button{border:1px solid #b8c9cd;border-radius:8px;background:#fff;padding:8px 11px;cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:#244853;border-color:#244853;color:#fff}.toolbar,.editor,.notice{background:white;border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:16px}.toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.status{font-size:13px;color:var(--muted)}.legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.calendar-wrap{overflow-x:auto;border:2px solid #1d3039;background:white}.calendar{display:grid;grid-template-columns:repeat(7,minmax(135px,1fr));min-width:945px}.day{min-height:240px;border-right:1px solid #273b43}.day:nth-child(7n){border-right:0}.day:nth-child(-n+7){border-bottom:1px solid #273b43}.day-head{background:var(--blue);border-bottom:1px solid #273b43;padding:9px;font-weight:750}.holiday{color:#c82323}.day-items{padding:8px;display:flex;flex-direction:column;gap:8px}.event{padding:9px;border-radius:8px;border:1px solid #bcd9df;background:#eaf5f7;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}.event small{display:block;color:#556b74}.add{margin-top:10px;width:100%;border-style:dashed;font-size:13px}.hint{font-size:13px;color:var(--muted)}.editor{margin-top:16px}.editor h2{margin:0 0 12px;font-size:19px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fields label{display:flex;flex-direction:column;gap:5px;font-size:13px;font-weight:650}.fields input,.fields textarea,.fields select{width:100%;border:1px solid #b8c9cd;border-radius:8px;padding:10px;background:#fff}.full{grid-column:span 2}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}.danger{color:#b52828}.notice{border-left:5px solid #daa03c}.hide{display:none}
@@ -41,11 +41,11 @@
 	.editor{scroll-margin-top:14px}
 }
 </style></head><body>
-<header><a href="./">← 返回景點介紹</a><h1>2027 春節共同旅遊行事曆</h1><p>A、B 團 2/3 會合後的共同安排｜1/31～2/13（兩週）</p></header>
+<header><a href="./">← 返回景點介紹</a><h1>2027 春節旅遊行事曆</h1><p>2027/1/31～2/13｜兩週行程規劃</p></header>
 <main>
 <div id="config-notice" class="notice"><strong>多人同步尚未啟用</strong><div class="hint">行事曆已建立。請先設定 Firebase 專案與 Firestore 規則才能多人共用；設定前無法儲存。啟用免登入共用後，任何取得網址的人都可能閱讀或修改行程，請勿填入個資或訂位編號。</div></div>
-<div class="toolbar"><div><strong>共同活動</strong><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><span class="hint">兩週共 14 天 · 星期日開始 · 初始無事項</span><button id="refresh" type="button">重新整理</button></div></div>
-<div class="calendar-wrap"><div class="calendar" id="calendar" aria-label="2027 年一月三十一日至二月十三日共同旅遊行事曆"></div></div>
+<div class="toolbar"><div><strong>行程事項</strong><div class="status" id="sync-status" role="status">等待雲端設定</div></div><div class="legend"><span class="hint">兩週共 14 天 · 星期日開始 · 初始無事項</span><button id="refresh" type="button">重新整理</button></div></div>
+<div class="calendar-wrap"><div class="calendar" id="calendar" aria-label="2027 年一月三十一日至二月十三日旅遊行事曆"></div></div>
 <div class="mobile-calendar" id="mobile-calendar">
 	<section class="mobile-overview" aria-label="選擇行程日期">
 		<div class="mobile-overview-header"><h2>兩週日期總覽</h2><div class="mobile-refresh-row"><button type="button" class="mobile-refresh" id="mobile-refresh">↻ 重新整理</button></div></div>
@@ -59,7 +59,7 @@
 	</section>
 </div>
 <section class="editor hide" id="editor"><h2 id="editor-title">新增事項</h2><form id="event-form"><div class="fields"><label>日期<select id="date" required></select></label><label>時間（選填）<input type="time" id="time"></label><label class="full">事項名稱<input id="title" maxlength="120" required placeholder="例如：集合、用餐、活動"></label><label class="full">備註（選填）<textarea id="notes" rows="3" maxlength="1000"></textarea></label></div><div class="actions"><button class="primary" id="save" type="submit">儲存到共用行事曆</button><button id="cancel" type="button">取消</button><button class="danger hide" id="delete" type="button">刪除事項</button></div></form></section>
-<p class="hint">1/31～2/2 僅顯示空白日期、不開放新增事項；從 2/3 會合後開始記錄共同行程。</p>
+<p class="hint">1/31～2/2 僅顯示日期；2/3 起可新增、修改行程。</p>
 </main>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -71,7 +71,7 @@ const names=dates.map(date=>{const [y,m,d]=date.split("-").map(Number);const lab
 const el=id=>document.getElementById(id),calendar=el("calendar"),editor=el("editor");
 const dateInput=el("date");for(let i=0;i<dates.length;i++){let opt=document.createElement("option");opt.value=dates[i];opt.textContent=names[i];dateInput.append(opt);}
 let items=[],db=null,enabled=false,selectedId=null,unsubscribe=null,activeDate="2027-02-03";
-function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent=date<"2027-02-03"?"會合前不記錄":"＋ 新增事項";add.disabled=!enabled||date<"2027-02-03";add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
+function render(){calendar.replaceChildren();dates.forEach((date,i)=>{const day=document.createElement("section");day.className="day";const head=document.createElement("div");head.className="day-head"+((i%7===0||i%7===6||lunar[date])?" holiday":"");head.textContent=names[i];const list=document.createElement("div");list.className="day-items";items.filter(e=>e.date===date).sort((a,b)=>(a.time||"").localeCompare(b.time||"")).forEach(e=>{const btn=document.createElement("button");btn.type="button";btn.className="event";const strong=document.createElement("strong");strong.textContent=(e.time?e.time+" ":"")+e.title;btn.append(strong);if(e.notes){const note=document.createElement("small");note.textContent=e.notes;btn.append(note)}btn.addEventListener("click",()=>openEditor(date,e));list.append(btn)});const add=document.createElement("button");add.type="button";add.className="add";add.textContent=date<"2027-02-03"?"此日期不開放編輯":"＋ 新增事項";add.disabled=!enabled||date<"2027-02-03";add.addEventListener("click",()=>openEditor(date));list.append(add);day.append(head,list);calendar.append(day)});renderMobile()}
 
 function renderMobile(){
 	const daysEl=el("mobile-days");
@@ -98,7 +98,7 @@ function renderMobile(){
 	if(!todayItems.length){
 		const empty=document.createElement("div");
 		empty.className="empty-note";
-		empty.textContent="尚未安排共同活動";
+		empty.textContent="尚未安排事項";
 		eventsEl.append(empty);
 	}else{
 		todayItems.forEach(e=>{
@@ -114,10 +114,10 @@ function renderMobile(){
 	}
 	const add=el("mobile-add");
 	add.disabled=!enabled||activeDate<"2027-02-03";
-	add.textContent=activeDate<"2027-02-03"?"會合前不記錄":"＋ 新增事項";
+	add.textContent=activeDate<"2027-02-03"?"此日期不開放編輯":"＋ 新增事項";
 }
 el("mobile-add").addEventListener("click",()=>openEditor(activeDate));
-function openEditor(date,e=null){if(!enabled||date<"2027-02-03")return;selectedId=e?.id||null;dateInput.value=date;el("time").value=e?.time||"";el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯共同事項":"新增共同事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
+function openEditor(date,e=null){if(!enabled||date<"2027-02-03")return;selectedId=e?.id||null;dateInput.value=date;el("time").value=e?.time||"";el("title").value=e?.title||"";el("notes").value=e?.notes||"";el("editor-title").textContent=e?"編輯事項":"新增事項";el("delete").classList.toggle("hide",!e);editor.classList.remove("hide");editor.scrollIntoView({behavior:"smooth",block:"nearest"})}
 function closeEditor(){editor.classList.add("hide");selectedId=null;el("event-form").reset()}
 el("cancel").addEventListener("click",closeEditor);
 el("refresh").addEventListener("click",()=>location.reload());
